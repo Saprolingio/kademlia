@@ -23,10 +23,19 @@ class Contact {
         this.port = port;
     }
 
+    public Contact(Contact to_clone) {
+        this.ip = to_clone.ip;
+        this.id = (BitSet) to_clone.id.clone();
+        this.port = to_clone.port;
+    }
+
     public String idString() {
         String ret = new String();
-        for (byte b : this.id.toByteArray()) 
+        for (byte b : this.id.toByteArray())
             ret += Integer.toHexString(b).toUpperCase();
+
+        if(ret.equals(""))
+            ret += "0";
 
         return ret;
     }

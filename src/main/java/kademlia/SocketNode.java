@@ -10,10 +10,10 @@ class SocketNode {
         this.allnodes = allnodes;
     }
 
-    Message sendAndRecive(Message mes) {
+    Message sendAndReceive(Message mes) {
         Node node = this.allnodes.get(mes.reciver.id);
         if(node != null)
-            return node.recive(mes);
+            return node.receive(mes);
         return null;
     }
 }

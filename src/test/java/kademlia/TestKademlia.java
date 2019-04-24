@@ -2,6 +2,7 @@ package kademlia;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -59,13 +60,13 @@ public class TestKademlia
     {
         try {
             final int k = 20;
-            long[] longs = {5, 1};
+            long[] longs = {5};
             BitSet hash = BitSet.valueOf(longs);
             Contact owner = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash);
             ShortList shortlist = new ShortList(k, owner);
-
+            final int start = 6;
             Contact contact;
-            for(int i = 5; i < (k + 6); i++) { //add k+1 elements
+            for(int i = start; i < (k + start + 1); i++) { //add k+1 elements
                 longs[0] = i;
                 hash = BitSet.valueOf(longs);
                 contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash);
@@ -73,7 +74,7 @@ public class TestKademlia
             }
 
             assertEquals(shortlist.size(), k + 1);
-            int i = 5;
+            int i = start;
             for (Element element : shortlist) {
                 longs[0] = i;
                 hash = BitSet.valueOf(longs);
@@ -85,8 +86,34 @@ public class TestKademlia
 
             shortlist.shrinkToK();
             assertEquals(k, shortlist.size());
+            shortlist.sort();
+
+            //test merging with more distant elements
+            ShortList distant = new ShortList(k, owner);
+            longs[0] = 99999999;
+            hash = BitSet.valueOf(longs);
+            contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash);
+            distant.add(contact);
+            distant.add(new Contact(contact));
+            assertEquals(1, distant.size());    //test for duplicates element
+            Element el = shortlist.get(shortlist.size() - 1);
+            shortlist.merge(distant);
+            assertEquals(k, shortlist.size());
+            assertEquals(el, shortlist.get(shortlist.size() - 1));
+
+            //test merging more closer elements
+            distant.clear();
+            long[] longs1 = {4};
+            hash = BitSet.valueOf(longs1);
+            contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash);
+            distant.add(contact);
+            el = shortlist.get(0);
+            shortlist.merge(distant);
+            assertEquals(k, shortlist.size());
+            assertNotEquals(el, shortlist.get(0));
+            assertEquals(new Element(contact), shortlist.get(0));
         } catch(UnknownHostException e) {
-            fail("impossible appened" + e.toString());
+            fail("impossible happened" + e.toString());
         }
     }
 }

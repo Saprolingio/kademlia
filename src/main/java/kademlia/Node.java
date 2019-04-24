@@ -19,7 +19,7 @@ class Node {
         this.Lookup();
     }
 
-    public Message recive(Message msg) {
+    public Message receive(Message msg) {
         switch(msg.type) {
             case PING:
                 return new Message.Response(msg);
@@ -37,7 +37,7 @@ class Node {
 
     public boolean ping(Contact who) {
         Message msg = new Message(Message.kind.PING, this.me, who);
-        msg = this.socket.sendAndRecive(msg);
+        msg = this.socket.sendAndReceive(msg);
         return msg != null;
     }
 
