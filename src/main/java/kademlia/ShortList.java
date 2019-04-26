@@ -8,10 +8,18 @@ import javax.lang.model.util.ElementScanner6;
 
 class Element {
     public final Contact contact;
-    public final boolean contacted;
+    private boolean contacted;
     public Element(Contact contact) {
         this.contact = contact;
         this.contacted = false;
+    }
+
+    public boolean get_contacted() {
+        return this.contacted;
+    }
+
+    public void set_contacted() {
+        this.contacted = true;
     }
 
     public boolean equals(Object obj) {
@@ -62,6 +70,8 @@ class ShortList extends ArrayList<Element>{
     }
 
     public void merge(ShortList list) {
+        if(list == null)
+            return;
         this.addAll(list);
         this.sort();
         this.shrinkToK();
@@ -72,11 +82,11 @@ class ShortList extends ArrayList<Element>{
             this.removeRange(this.k, this.size());
     }
 
-    public ArrayList<Contact> getAlpha(int alpha) {
-        ArrayList<Contact> ret = new ArrayList<Contact>(3);
+    public ArrayList<Element> getAlpha(int alpha) {
+        ArrayList<Element> ret = new ArrayList<Element>(alpha);
         for(Element e: this) {
-            if(!e.contacted) {
-                ret.add(e.contact);
+            if(!e.get_contacted()) {
+                ret.add(e);
             }
         }
         return ret;

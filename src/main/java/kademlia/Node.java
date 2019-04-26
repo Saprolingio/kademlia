@@ -5,18 +5,29 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.opencsv.CSVWriter;
+
 class Node {
-    private ArrayList<Klist> routing_table;
+    public final static int alpha = 3;
+
     private final int k;
-    private SocketNode socket;
-    private Map<BitSet, Object> stored_objects;
     public final Contact me;
+    private SocketNode socket;
+    private Klist[] routing_table;
+    //private Map<BitSet, Object> stored_objects;
 
     public Node(SocketNode socket, Contact me, int k) {
+        this.k = k;
         this.me = me;
         this.socket = socket;
-        this.k = k;
-        this.Lookup();
+        this.routing_table = new Klist[this.me.id_bit_length];
+    }
+
+    public void bootstrap(Contact bootstrap){
+        ShortList list = new ShortList(this.k, this.me);
+        list.add(bootstrap);
+        this.updateKlist(list);
+        this.Lookup(this.me.id);
     }
 
     public Message receive(Message msg) {
@@ -46,15 +57,17 @@ class Node {
             BitSet app = (BitSet) el.contact.id.clone();
             app.xor(this.me.id);
             final int pos = app.length() / 8;
-            Klist klist = this.routing_table.get(pos);
+            Klist klist = this.routing_table[pos];
+            System.out.println("FFFFFFFFFFF");
+
             if(klist == null) {
                 klist = new Klist(this.k);
-                this.routing_table.add(pos, klist);
+                this.routing_table[pos] =  klist;
             }
             Contact res = klist.addContact(el.contact);
             if(res != el.contact) {
                 Message msg = new Message(Message.kind.PING, this.me, res); //ping if alive
-                msg = this.socket.sendAndRecive(msg);
+                msg = this.socket.sendAndReceive(msg);
                 if(msg == null) //timed out
                     klist.replace(el.contact);
                 else
@@ -69,15 +82,15 @@ class Node {
         final int pos = app.length() / 8;
         Klist list = null;
         ShortList res = new ShortList(this.k, this.me);
-        for(int i = pos; res.size() < this.k && i < this.routing_table.size(); i++) {
-            list = this.routing_table.get(i);
+        for(int i = pos; res.size() < this.k && i < this.routing_table.length; i++) {
+            list = this.routing_table[i];
             if(list == null)
                 continue;
             for(Contact c: list)
                 res.add(c);
         }
         for(int i = pos - 1; res.size() < this.k && i >= 0; i--) {
-            list = this.routing_table.get(i);
+            list = this.routing_table[i];
             if(list == null)
                 continue;
             for(Contact c: list)
@@ -87,10 +100,43 @@ class Node {
         return res;
     }
 
-    private void Lookup() {
-        ShortList shortlist = new ShortList(this.k, this.me);
+    private void Lookup(BitSet id) {
+        ShortList short_list = findNode(id);
+        ShortList traversed = new ShortList(this.k, this.me);
+        traversed.add(this.me);
+        ArrayList<Element> list = short_list.getAlpha(Node.alpha);
+        short_list.sort();
 
+        while(list.size() != 0) {
+            short_list.merge(
+                list.parallelStream().map(el -> {
+                        Message.FindRequest msg = new Message.FindRequest(id, traversed, this.me, el.contact);
+                        Message.FindResponse res = (Message.FindResponse) this.socket.sendAndReceive(msg);
+                        if(res == null)
+                            return null;
+                        else{
+                            el.set_contacted();
+                            this.updateKlist(res.shortlist);
+                            return res.shortlist;
+                        }
+                    }).reduce((sl1, sl2) -> {
+                        sl1.merge(sl2);
+                        return sl1;
+                    }).get());
+            list = short_list.getAlpha(Node.alpha);
+        }
     }
 
     public void store() {}   // TODO sss
+
+    public void writeToCSV(CSVWriter csvw) {
+        String [] row = new String[2];
+        for (Klist klist : this.routing_table) {
+            for(Contact c: klist){
+                row[0] = this.me.idString();
+                row[1] = c.idString();
+                csvw.writeNext(row);
+            }
+        }
+    }
 };

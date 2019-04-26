@@ -11,26 +11,26 @@ class Message {
 
     public final kind type;
     public final Contact sender;
-    public final Contact reciver;
+    public final Contact receiver;
 
-    public Message(Message.kind type, Contact sender, Contact reciver) {
+    public Message(Message.kind type, Contact sender, Contact receiver) {
         this.type = type;
         this.sender = sender;
-        this.reciver = reciver;
+        this.receiver = receiver;
     }
 
     public static class Response extends Message {
-        // simply invert server and reciver of a message
+        // simply invert server and receiver of a message
         public Response(Message mes) {
-            super(Message.kind.PING, mes.reciver, mes.sender);
+            super(Message.kind.PING, mes.receiver, mes.sender);
         }
     };
 
     public static class FindRequest extends Message {
         public final BitSet id;
         public final ShortList traversed_nodes;
-        public FindRequest(BitSet id, ShortList traversed_nodes, Contact sender, Contact reciver) {
-            super(Message.kind.FIND, reciver, sender);
+        public FindRequest(BitSet id, ShortList traversed_nodes, Contact sender, Contact receiver) {
+            super(Message.kind.FIND, receiver, sender);
             this.id = id;
             this.traversed_nodes = traversed_nodes;
         }
@@ -38,12 +38,12 @@ class Message {
 
     public static class FindResponse extends Response {
         public final BitSet id;
-        public final ShortList klist;
-        public FindResponse(ShortList klist, Message mes) {
+        public final ShortList shortlist;
+        public FindResponse(ShortList shortlist, Message mes) {
             super(mes);
             FindRequest req = (FindRequest) mes;
             this.id = req.id;
-            this.klist = klist;
+            this.shortlist = shortlist;
         }
     };
 }

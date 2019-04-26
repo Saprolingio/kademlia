@@ -1,3 +1,7 @@
+#ide
+.vscode/
+
+#maven
 target/
 pom.xml.tag
 pom.xml.releaseBackup
