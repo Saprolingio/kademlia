@@ -1,10 +1,6 @@
 package kademlia;
 
 import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collection;
-
-import javax.lang.model.util.ElementScanner6;
 
 class Element {
     public final Contact contact;
@@ -49,7 +45,7 @@ class ShortList extends ArrayList<Element>{
     }
 
     public void add(Contact cont) {
-        //find for duplicates
+        //find for duplicates    
         for(Element el: this) {
             if(el.contact.equals(cont))
                 return;

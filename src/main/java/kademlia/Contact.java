@@ -12,6 +12,10 @@ class Contact {
     public final int port; //used as unsigned int 16bit
     public final int id_bit_length;
 
+    private static int idivCeil(int bitlen, int div) {
+        return (int) Math.ceil((double)bitlen / div);
+    }
+
     public Contact(InetAddress ip, int port, BitSet id, int id_bit_length) {
         this.ip = ip;
         this.port = port;
@@ -35,19 +39,18 @@ class Contact {
     }
 
     public String idString() {
-        String ret = new String();
-        for (byte b : this.id.toByteArray())
-            ret += Integer.toHexString(b).toUpperCase();
-
-        if(ret.equals(""))
-            ret += "0";
-
-        return ret;
+        StringBuilder res = new StringBuilder();
+        byte[] id_bytes = this.id.toByteArray();
+        for(int i = idivCeil(this.id_bit_length, 16) - id_bytes.length * 2; i > 0; i--)
+            res.append("0");
+        for (byte b : id_bytes)
+            res.append(String.format("%02X", b));
+        return res.toString();
     }
 
     public static BitSet hash(InetAddress ip, Integer port, int id_length) throws UnsupportedEncodingException {
         DigestSHA3 sha;
-        final int hash_len;
+        int hash_len;
         if(id_length < 224)
             hash_len = 224;
         else if(id_length < 256)
@@ -57,17 +60,21 @@ class Contact {
         else
             hash_len = 512;
         sha = new DigestSHA3(hash_len);
-        ByteBuffer buff = ByteBuffer.allocate(id_length);
+        byte[] buff = new byte[idivCeil(id_length, 8)];
         sha.update(ip.getAddress());
         sha.update(port.byteValue());
         byte b = 0;
+        int wrote = 0;
         for(int i = 0; i < id_length; i += hash_len) {
             int min = Math.min(id_length, hash_len);
-            buff.put(sha.digest(), 0, min);
+            byte[] digest = sha.digest();
+            for(int j = 0; j < digest.length && wrote < idivCeil(min, 8); j++) {
+                buff[wrote] = digest[i];
+                wrote++;
+            }
             id_length -= min;
             sha.update(b++);
         }
-
         return BitSet.valueOf(buff);
     }
 

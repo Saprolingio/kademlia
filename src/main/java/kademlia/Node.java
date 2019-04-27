@@ -1,9 +1,9 @@
 package kademlia;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Iterator;
-import java.util.Map;
 
 import com.opencsv.CSVWriter;
 
@@ -54,24 +54,24 @@ class Node {
 
     private void updateKlist(ShortList list) {
         for (Element el : list) {
-            BitSet app = (BitSet) el.contact.id.clone();
-            app.xor(this.me.id);
-            final int pos = app.length() / 8;
-            Klist klist = this.routing_table[pos];
-            System.out.println("FFFFFFFFFFF");
-
-            if(klist == null) {
-                klist = new Klist(this.k);
-                this.routing_table[pos] =  klist;
-            }
-            Contact res = klist.addContact(el.contact);
-            if(res != el.contact) {
-                Message msg = new Message(Message.kind.PING, this.me, res); //ping if alive
-                msg = this.socket.sendAndReceive(msg);
-                if(msg == null) //timed out
-                    klist.replace(el.contact);
-                else
-                    klist.refresh(res);
+            if(!el.contact.equals(this.me)) {
+                BitSet app = (BitSet) el.contact.id.clone();
+                app.xor(this.me.id);
+                final int pos = app.length() / 8;
+                Klist klist = this.routing_table[pos];
+                if(klist == null) {
+                    klist = new Klist(this.k);
+                    this.routing_table[pos] =  klist;
+                }
+                Contact res = klist.addContact(el.contact);
+                if(res != el.contact) {
+                    Message msg = new Message(Message.kind.PING, this.me, res); //ping if alive
+                    msg = this.socket.sendAndReceive(msg);
+                    if(msg == null) //timed out
+                        klist.replace(el.contact);
+                    else
+                        klist.refresh(res);
+                }
             }
         }
     }
@@ -106,7 +106,6 @@ class Node {
         traversed.add(this.me);
         ArrayList<Element> list = short_list.getAlpha(Node.alpha);
         short_list.sort();
-
         while(list.size() != 0) {
             short_list.merge(
                 list.parallelStream().map(el -> {
@@ -116,9 +115,12 @@ class Node {
                             return null;
                         else{
                             el.set_contacted();
-                            this.updateKlist(res.shortlist);
+                            //this.updateKlist(res.shortlist);
                             return res.shortlist;
                         }
+                    }).sequential().map(l -> {
+                        this.updateKlist(l);
+                        return l;
                     }).reduce((sl1, sl2) -> {
                         sl1.merge(sl2);
                         return sl1;
@@ -129,14 +131,20 @@ class Node {
 
     public void store() {}   // TODO sss
 
+    public static CSVWriter get_default_CSVWriter(String path) throws IOException
+    {
+        return new CSVWriter(new FileWriter(path),  ',', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+    }
+
     public void writeToCSV(CSVWriter csvw) {
         String [] row = new String[2];
         for (Klist klist : this.routing_table) {
-            for(Contact c: klist){
-                row[0] = this.me.idString();
-                row[1] = c.idString();
-                csvw.writeNext(row);
-            }
+            if(klist != null)
+                for(Contact c: klist){
+                    row[0] = this.me.idString();
+                    row[1] = c.idString();
+                    csvw.writeNext(row);
+                }
         }
     }
 };

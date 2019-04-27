@@ -30,7 +30,7 @@ class Message {
         public final BitSet id;
         public final ShortList traversed_nodes;
         public FindRequest(BitSet id, ShortList traversed_nodes, Contact sender, Contact receiver) {
-            super(Message.kind.FIND, receiver, sender);
+            super(Message.kind.FIND, sender, receiver);
             this.id = id;
             this.traversed_nodes = traversed_nodes;
         }

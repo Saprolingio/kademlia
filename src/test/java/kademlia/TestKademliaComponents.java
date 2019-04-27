@@ -16,7 +16,7 @@ import org.junit.Test;
  */
 public class TestKademliaComponents
 {
-    final int id_bit_length = 160;
+    final int id_bit_length = 32;
 
     @Test
     public void contact()
@@ -25,14 +25,14 @@ public class TestKademliaComponents
             long[] longs = {3};
             BitSet hash = BitSet.valueOf(longs);
             Contact contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash, id_bit_length);
-            assertEquals("3", contact.idString());
+            assertEquals("03", contact.idString());
             long[] longs1 = {2};
             hash = BitSet.valueOf(longs1);
             Contact contact1 = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash, id_bit_length);
             assertEquals(1, contact.distance(contact1));
             assertEquals(contact.distance(contact), contact.distance(contact));
 
-            String[] repr = {"1", "2", "4", "6", "8", "A", "C", "E", "10", "12"};
+            String[] repr = {"01", "02", "04", "06", "08", "0A", "0C", "0E", "10", "12"};
             for(int i = 1; i < repr.length; i++) {
                 longs[0] = i * 2;
                 hash = BitSet.valueOf(longs);
@@ -42,11 +42,6 @@ public class TestKademliaComponents
         } catch(UnknownHostException e) {
             fail("impossible appened" + e.toString());
         }
-        /*
-        catch(UnsupportedEncodingException e) {
-            fail("impossible appened" + e.toString());
-        }
-        */
     }
 
     
@@ -75,7 +70,7 @@ public class TestKademliaComponents
                 hash = BitSet.valueOf(longs);
                 contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash, id_bit_length);
                 assertEquals(contact, element.contact);
-                assertFalse(element.contacted);
+                assertFalse(element.get_contacted());
                 i++;
             }
 
