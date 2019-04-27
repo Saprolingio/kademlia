@@ -2,19 +2,19 @@ package kademlia;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.nio.ByteBuffer;
+import java.net.UnknownHostException;
 import java.util.BitSet;
 import org.bouncycastle.jcajce.provider.digest.SHA3.DigestSHA3;
+
+import static net.andreinc.mockneat.unit.types.Ints.ints;
+import static net.andreinc.mockneat.unit.networking.IPv6s.ipv6s;
+
 
 class Contact {
     public final InetAddress ip;
     public final BitSet id;
     public final int port; //used as unsigned int 16bit
     public final int id_bit_length;
-
-    private static int idivCeil(int bitlen, int div) {
-        return (int) Math.ceil((double)bitlen / div);
-    }
 
     public Contact(InetAddress ip, int port, BitSet id, int id_bit_length) {
         this.ip = ip;
@@ -25,10 +25,12 @@ class Contact {
 
     //auto assign an id based on ip port
     public Contact(InetAddress ip, int port, int id_bit_length) throws UnsupportedEncodingException {
-        this.ip = ip;
-        this.id_bit_length = id_bit_length;
-        this.id = Contact.hash(ip, port, id_bit_length);
-        this.port = port;
+        this(ip, port, Contact.hash(ip, port, id_bit_length), id_bit_length);
+    }
+
+    //randomly generate contact
+    public Contact(int id_bit_length) throws UnknownHostException, UnsupportedEncodingException {
+        this(InetAddress.getByName(ipv6s().get()), ints().range(0, 65535).get(), id_bit_length);
     }
 
     public Contact(Contact to_clone) {
@@ -36,6 +38,10 @@ class Contact {
         this.id = (BitSet) to_clone.id.clone();
         this.port = to_clone.port;
         this.id_bit_length = to_clone.id_bit_length;
+    }
+
+    private static int idivCeil(int bitlen, int div) {
+        return (int) Math.ceil((double)bitlen / div);
     }
 
     public String idString() {
@@ -65,11 +71,12 @@ class Contact {
         sha.update(port.byteValue());
         byte b = 0;
         int wrote = 0;
-        for(int i = 0; i < id_length; i += hash_len) {
+        for(int i = 0; i < id_length;) {
             int min = Math.min(id_length, hash_len);
             byte[] digest = sha.digest();
             for(int j = 0; j < digest.length && wrote < idivCeil(min, 8); j++) {
                 buff[wrote] = digest[i];
+                i++;
                 wrote++;
             }
             id_length -= min;

@@ -53,50 +53,10 @@ public class TestKademlia
 
             assertTrue(node.ping(bootstrap.me));
             node.bootstrap(bootstrap.me);
-
-            //1 node
-            CSVWriter csvw = Node.get_default_CSVWriter(path_routetable);
-            node.writeToCSV(csvw);
-            csvw.close();
-            List<String> lines_from_csv = Files.readAllLines(Paths.get(path_routetable));
-            List<String> lines_expected_from_csv = Arrays.asList("98989898,D3D3D3D3");
-            assertEquals(lines_expected_from_csv, lines_from_csv);
-
-            //2 nodes
-            contact = new Contact(InetAddress.getByName("192.168.0.3"), 1235, id_bit_length);
-            node = new Node(socket, contact, k);
-            all_nodes.put(node.me.id, node);
-            node.bootstrap(bootstrap.me);
-
-            csvw = Node.get_default_CSVWriter(path_routetable);
-            for(Map.Entry<BitSet, Node> entry : all_nodes.entrySet()) {
-                node = entry.getValue();
-                node.writeToCSV(csvw);
-            }
-            csvw.close();
-            lines_from_csv = Files.readAllLines(Paths.get(path_routetable));
-            lines_expected_from_csv = Arrays.asList(
-                "D3D3D3D3,98989898",
-                "D3D3D3D3,88888888",
-                "98989898,D3D3D3D3",
-                "98989898,88888888",
-                "88888888,98989898",
-                "88888888,D3D3D3D3");
-            
-            assertEquals(lines_expected_from_csv, lines_from_csv);
-
-        } catch(UnsupportedEncodingException e) {
-            fail("impossible happened" + e.toString());
-        } catch(UnknownHostException e) {
+        } catch(UnsupportedEncodingException | UnknownHostException e) {
             fail("impossible happened" + e.toString());
         } catch(IOException e) {
             fail("IO error: " + e.toString());
         }
-    }
-
-    @Test
-    public void coordinator() {
-        String [] params = {"-m 5 -n 16"};
-        Coordinator.main(params);
     }
 }

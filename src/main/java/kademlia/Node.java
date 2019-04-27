@@ -10,6 +10,11 @@ import com.opencsv.CSVWriter;
 class Node {
     public final static int alpha = 3;
 
+    // visualizzation addittion
+    private static long node_counter = 0;
+    public final long node_number; 
+    private long received_findnode; 
+
     private final int k;
     public final Contact me;
     private SocketNode socket;
@@ -21,6 +26,8 @@ class Node {
         this.me = me;
         this.socket = socket;
         this.routing_table = new Klist[this.me.id_bit_length];
+        this.node_number = node_counter++;
+        this.received_findnode = 0;
     }
 
     public void bootstrap(Contact bootstrap){
@@ -36,6 +43,7 @@ class Node {
                 return new Message.Response(msg);
             case FIND:
                 Message.FindRequest fr = (Message.FindRequest) msg;
+                this.received_findnode++;
                 this.updateKlist(fr.traversed_nodes);
                 return new Message.FindResponse(this.findNode(fr.id), msg);
             case STORE:
@@ -131,18 +139,23 @@ class Node {
 
     public void store() {}   // TODO sss
 
+    private static String[] headers = {"SOURCE", "TARGET", "JOIN_NUMBER", "RECEIVED_FINDNODE"};
     public static CSVWriter get_default_CSVWriter(String path) throws IOException
     {
-        return new CSVWriter(new FileWriter(path),  ',', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+        CSVWriter writer = new CSVWriter(new FileWriter(path),  ',', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+        writer.writeNext(headers, true);
+        return writer;
     }
 
     public void writeToCSV(CSVWriter csvw) {
-        String [] row = new String[2];
+        String [] row = new String[headers.length];
         for (Klist klist : this.routing_table) {
             if(klist != null)
                 for(Contact c: klist){
                     row[0] = this.me.idString();
                     row[1] = c.idString();
+                    row[2] = Long.toString(this.node_number);
+                    row[3] = Long.toString(this.received_findnode);
                     csvw.writeNext(row);
                 }
         }
