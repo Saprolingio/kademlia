@@ -1,24 +1,15 @@
 package kademlia;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.List;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.opencsv.CSVWriter;
 
 import org.junit.After;
 import org.junit.Test;
@@ -55,8 +46,6 @@ public class TestKademlia
             node.bootstrap(bootstrap.me);
         } catch(UnsupportedEncodingException | UnknownHostException e) {
             fail("impossible happened" + e.toString());
-        } catch(IOException e) {
-            fail("IO error: " + e.toString());
         }
     }
 }

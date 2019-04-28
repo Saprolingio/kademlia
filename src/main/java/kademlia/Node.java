@@ -40,6 +40,7 @@ class Node {
     public Message receive(Message msg) {
         switch(msg.type) {
             case PING:
+                this.addContact(msg.sender);
                 return new Message.Response(msg);
             case FIND:
                 Message.FindRequest fr = (Message.FindRequest) msg;
@@ -61,26 +62,32 @@ class Node {
     }
 
     private void updateKlist(ShortList list) {
-        for (Element el : list) {
-            if(!el.contact.equals(this.me)) {
-                BitSet app = (BitSet) el.contact.id.clone();
-                app.xor(this.me.id);
-                final int pos = app.length() / 8;
-                Klist klist = this.routing_table[pos];
-                if(klist == null) {
-                    klist = new Klist(this.k);
-                    this.routing_table[pos] =  klist;
-                }
-                Contact res = klist.addContact(el.contact);
-                if(res != el.contact) {
-                    Message msg = new Message(Message.kind.PING, this.me, res); //ping if alive
-                    msg = this.socket.sendAndReceive(msg);
-                    if(msg == null) //timed out
-                        klist.replace(el.contact);
-                    else
-                        klist.refresh(res);
-                }
-            }
+        if(list == null)
+            return;
+
+        for (Element el : list)
+            if(!el.contact.equals(this.me))
+                this.addContact(el.contact);
+    }
+
+    private void addContact(Contact contact) {
+        BitSet app = (BitSet) contact.id.clone();
+        app.xor(this.me.id);
+        final int pos = app.length() / 8;
+        Klist klist = this.routing_table[pos];
+        if(klist == null) {
+            klist = new Klist(this.k);
+            this.routing_table[pos] =  klist;
+        }
+
+        Contact res = klist.addContact(contact);
+        if(res != contact) {
+            Message msg = new Message(Message.kind.PING, this.me, res); //ping if alive
+            msg = this.socket.sendAndReceive(msg);
+            if(msg == null) //timed out
+                klist.replace(contact);
+            else
+                klist.refresh(res);
         }
     }
 
@@ -108,32 +115,32 @@ class Node {
         return res;
     }
 
-    private void Lookup(BitSet id) {
+    public void Lookup(BitSet id) {
         ShortList short_list = findNode(id);
         ShortList traversed = new ShortList(this.k, this.me);
         traversed.add(this.me);
         ArrayList<Element> list = short_list.getAlpha(Node.alpha);
         short_list.sort();
         while(list.size() != 0) {
-            short_list.merge(
-                list.parallelStream().map(el -> {
-                        Message.FindRequest msg = new Message.FindRequest(id, traversed, this.me, el.contact);
-                        Message.FindResponse res = (Message.FindResponse) this.socket.sendAndReceive(msg);
-                        if(res == null)
-                            return null;
-                        else{
-                            el.set_contacted();
-                            //this.updateKlist(res.shortlist);
-                            return res.shortlist;
-                        }
-                    }).sequential().map(l -> {
-                        this.updateKlist(l);
-                        return l;
-                    }).reduce((sl1, sl2) -> {
-                        sl1.merge(sl2);
-                        return sl1;
-                    }).get());
+            ShortList requested = list.stream().map(el -> {
+                Message.FindRequest msg = new Message.FindRequest(id, traversed, this.me, el.contact);
+                Message.FindResponse res = (Message.FindResponse) this.socket.sendAndReceive(msg);
+                if(res == null)
+                    return null;
+                else{
+                    el.set_contacted();
+                    return res.shortlist;
+                }
+            }).reduce((sl1, sl2) -> {
+                sl1.addAll(sl2);
+                return sl1;
+            }).get();
+
+            this.updateKlist(requested);
+            short_list.merge(requested);
+            traversed.addAll(list); // FIXME not all nodes are shurely contacted
             list = short_list.getAlpha(Node.alpha);
+            System.out.println(traversed.size() + " --- " + list.size());
         }
     }
 

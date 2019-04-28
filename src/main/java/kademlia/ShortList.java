@@ -35,8 +35,9 @@ class Element {
 };
 
 class ShortList extends ArrayList<Element>{
+    private static final long serialVersionUID = 4193002791038011048L;
     private final int k;
-    private final Contact owner;
+    public final Contact owner;
 
     public ShortList(int k, Contact owner){
         this.k = k;
@@ -54,14 +55,19 @@ class ShortList extends ArrayList<Element>{
     }
 
     public void addAll(ShortList list) {
+        if(list == null)
+            return;
         for(Element el: list)
             this.add(el.contact);
     }
 
     public void sort() {
         this.sort((Element x, Element y) -> {
-            long dist = x.contact.distance(owner) - y.contact.distance(owner);
-            return (int)(dist % Integer.MAX_VALUE);
+            if(x.contact.distance(owner) > y.contact.distance(owner))
+                return 1; 
+            if(x.contact.distance(owner) < y.contact.distance(owner))
+                return -1;
+            return 0; 
         });
     }
 
@@ -81,8 +87,11 @@ class ShortList extends ArrayList<Element>{
     public ArrayList<Element> getAlpha(int alpha) {
         ArrayList<Element> ret = new ArrayList<Element>(alpha);
         for(Element e: this) {
+            if(alpha == 0)
+                break;
             if(!e.get_contacted()) {
                 ret.add(e);
+                alpha--;
             }
         }
         return ret;
