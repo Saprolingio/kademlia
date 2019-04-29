@@ -10,11 +10,11 @@ class Element {
         this.contacted = false;
     }
 
-    public boolean get_contacted() {
+    public boolean getContacted() {
         return this.contacted;
     }
 
-    public void set_contacted() {
+    public void setContacted() {
         this.contacted = true;
     }
 
@@ -47,8 +47,10 @@ class ShortList extends ArrayList<Element>{
     }
 
     public void add(Contact cont) {
+        /*
         if(cont.equals(this.owner))
             return;
+        */
         //find for duplicates    
         for(Element el: this) {
             if(el.contact.equals(cont))
@@ -92,7 +94,7 @@ class ShortList extends ArrayList<Element>{
         for(Element e: this) {
             if(alpha == 0)
                 break;
-            if(!e.get_contacted()) {
+            if(!e.getContacted()) {
                 ret.add(e);
                 alpha--;
             }

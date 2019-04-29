@@ -23,9 +23,14 @@ import picocli.CommandLine.Model.CommandSpec;
 import static net.andreinc.mockneat.unit.types.Ints.ints;
 import static net.andreinc.mockneat.unit.networking.IPv6s.ipv6s;
 
-@Command(mixinStandardHelpOptions = true, version = "v1.0.0", header = "Kademlia Simulator")
+@Command(mixinStandardHelpOptions = true, version = "v1.0.0", header = "Kademlia Simulator.", description = {
+    "This tool will produce a pari of csv files:",
+    "\t* routing_table*.csv containing tuple <SOURCE, TARGET, JOIN_NODE, N_RECIVED_FINDNODE> compatible with cytoscape;",
+    "\t* the other it's a routing table of the first kademlia node.",
+    })
 public class Simulator {
     @Spec public CommandSpec spec;
+    
 
     @ArgGroup(exclusive = false, multiplicity = "1")
     public Real_params params;
@@ -50,9 +55,13 @@ public class Simulator {
     @Option(names = { "-a", "--alpha"}, paramLabel = "n_lookups", defaultValue = "3", required = true, description = "The is the number of parallel lookups. It is also the number of elements taken from a routing table during a findNode (default: ${DEFAULT-VALUE}).")
     public int alpha;
 
+    @Option(names = { "-r", "--recursive"}, defaultValue = "false", required = true, description = "Select between a fullLookup function and a lighter recursivefindNode. (default: ${DEFAULT-VALUE}).")
+    public boolean recursive;
+
     public static void main(String[] args) {
         Simulator simulator = new Simulator();
         CommandLine commandLine = new CommandLine(simulator);
+        commandLine.setUsageHelpWidth(160);
         try {
             commandLine.parseArgs(args);
             if (commandLine.isUsageHelpRequested()) {
@@ -78,6 +87,8 @@ public class Simulator {
                 out.append(simulator.k);
                 out.append("-l");
                 out.append(simulator.lookups);
+                if(simulator.recursive)
+                    out.append("-r");
                 out.append(".csv");
                 simulator.output = out.toString();
             }
@@ -110,8 +121,12 @@ public class Simulator {
         return n;
     }
 
-    private Node randomBootstrap() {
-        return this.joined_nodes.get(ints().range(0, joined_nodes.size()-1).get());
+    private Node randomBootstrap(Node node) {
+        int rand_pos = ints().range(0, joined_nodes.size()-1).get();
+        Node rand_node = this.joined_nodes.get(rand_pos);
+        if(rand_node.me.equals(node.me)) // ensure not same node
+            rand_node = this.joined_nodes.get((rand_pos + 1) % joined_nodes.size());
+        return rand_node;
     }
 
     public void start() {
@@ -121,7 +136,9 @@ public class Simulator {
             Node node;
             for(int n_nodes = this.params.n_nodes - 1; n_nodes > 0; n_nodes--) {
                 node = this.nodeJoining();
-                node.bootstrap(bootstrap.me);
+                bootstrap = randomBootstrap(node);
+                if(!this.recursive)
+                    node.bootstrap(bootstrap.me);
                 if(this.lookups > 0) {
                     for(int bucket_index = 0; bucket_index < this.k; bucket_index++)
                         for(int n_lookups = this.lookups; n_lookups > 0; n_lookups--) {
@@ -132,10 +149,14 @@ public class Simulator {
                                 else
                                     id.clear(bit_to_set);
                             }
-                            node.Lookup(id);
+                            if(this.recursive) {
+                                ShortList traversed = new ShortList(this.k, bootstrap.me);
+                                traversed.add(node.me);
+                                node.recursiveFindNode(bootstrap.me, id, traversed);
+                            } else 
+                                node.Lookup(id);
                         }
                 }
-                bootstrap = randomBootstrap();
             }
             first.toCSV();
 

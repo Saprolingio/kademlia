@@ -10,27 +10,20 @@ class Klist extends ArrayDeque<Contact> {
         this.k = k;
     }
 
-    Contact addContact(Contact c) {
+    public Contact addContact(Contact c) {
+        if(this.remove(c))
+            return c;    // need a ping to be refreshed
+
         if(this.size() < this.k) {
-            this.refresh(c);
-            return c;
-        }
-
-        if(this.remove(c)) {
             this.addLast(c);
-            return c;
+            return null;
         }
 
-        return this.peek(); // need a ping to be refreshed
+        return this.removeFirst(); // need a ping to be refreshed
     }
 
-    void refresh(Contact c) {
-        this.remove(c);
-        this.addLast(c);
-    }
-
-    void replace(Contact c) {
-        this.removeFirst();
-        this.addLast(c);
+    public void refresh(Contact c) {
+        if(this.remove(c) || this.size() < this.k)
+            this.addLast(c);
     }
 }

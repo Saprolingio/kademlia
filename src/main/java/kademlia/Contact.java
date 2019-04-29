@@ -105,9 +105,10 @@ class Contact {
         return d;
     }
 
+    @Override
     public boolean equals(Object obj) {
         Contact other = (Contact) obj;
-        return this.id.equals(other.id) && this.ip.equals(other.ip) && this.port == other.port;
+        return this.id.equals(other.id);
     }
 
     public String toString() {

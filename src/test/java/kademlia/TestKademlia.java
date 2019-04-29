@@ -21,6 +21,7 @@ import org.junit.Test;
 public class TestKademlia {
     private final String path_routetable = "./routetable.csv";
     final int id_bit_length = 32;
+    final int alpha = 1;
 
     @After
     public void cleanup() {
@@ -35,17 +36,17 @@ public class TestKademlia {
             final int k = 20;
             Contact contact = new Contact(InetAddress.getByName("192.168.0.1"), 1235, id_bit_length);
             SocketNode socket = new SocketNode(all_nodes);
-            Node bootstrap = new Node(socket, contact, k);
+            Node bootstrap = new Node(socket, contact, k, alpha);
             all_nodes.put(bootstrap.me.id, bootstrap);
             contact = new Contact(InetAddress.getByName("192.168.0.2"), 1235, id_bit_length);
-            Node node = new Node(socket, contact, k);
+            Node node = new Node(socket, contact, k, alpha);
             all_nodes.put(node.me.id, node);
 
             assertTrue(node.ping(bootstrap.me));
             node.bootstrap(bootstrap.me);
 
             contact = new Contact(InetAddress.getByName("192.168.0.3"), 1235, id_bit_length);
-            Node node1 = new Node(socket, contact, k);
+            Node node1 = new Node(socket, contact, k, alpha);
             all_nodes.put(node1.me.id, node);
             node1.bootstrap(bootstrap.me);
 

@@ -65,8 +65,7 @@ class Node {
             return;
 
         for (Element el : list)
-            if(!el.contact.equals(this.me))
-                this.addContact(el.contact);
+            this.addContact(el.contact);
     }
 
     @SuppressWarnings("unused") //TODO Debug only
@@ -95,18 +94,18 @@ class Node {
     }
 
     private void addContact(Contact contact) {
-        if(contact.id.equals(this.me.id))
+        if(contact.equals(this.me))
             return;
         Klist klist = this.getKbucket(contact);
         if(klist == null)
             return;
 
         Contact res = klist.addContact(contact);
-        if(res != contact) {
-            if(!this.ping(res)) //timed out
-                klist.replace(contact);
-            else
-                klist.refresh(res);
+        if(res != null) {
+            if(res.equals(contact) || this.ping(res))
+                klist.addContact(res); // refresh this contact
+            else 
+                klist.addContact(contact);  // old contact timedout, replace it with new contact
         }
     }
 
@@ -157,7 +156,7 @@ class Node {
                     if(res == null)
                         return null;
                     else{
-                        el.set_contacted();
+                        el.setContacted();
                         return res.shortlist;
                     }
                 }).reduce((sl1, sl2) -> {
@@ -168,7 +167,7 @@ class Node {
                 this.updateKlist(requested);
                 short_list.merge(requested);
                 for (Element el : list) {
-                    if(el.get_contacted())
+                    if(el.getContacted())
                         traversed.add(el);
                 }
                 list = short_list.getAlpha(this.alpha);
@@ -180,11 +179,27 @@ class Node {
                     Message.FindRequest msg = new Message.FindRequest(id, traversed, this.me, el.contact);
                     Message.FindResponse res = (Message.FindResponse) this.socket.sendAndReceive(msg);
                     if(res != null)
-                        el.set_contacted();
+                        el.setContacted();
                         this.updateKlist(res.shortlist);
                 }
             }
         }
+    }
+
+    public void recursiveFindNode(Contact nearest, BitSet id, ShortList traversed) {
+        Message.FindRequest msg = new Message.FindRequest(id, traversed, this.me, nearest);
+        Message.FindResponse res = (Message.FindResponse) this.socket.sendAndReceive(msg);
+        if(res == null || res.shortlist.size() == 0)
+            return;
+        
+        res.shortlist.sort();
+        this.updateKlist(res.shortlist);
+        Contact newNearest = res.shortlist.get(0).contact;
+        if(newNearest.distance(this.me) >= nearest.distance(this.me))
+            return;
+        
+        traversed.add(nearest);
+        recursiveFindNode(newNearest, id, traversed);
     }
 
     private static String[] headers = {"SOURCE", "TARGET", "JOIN_NUMBER", "RECEIVED_FINDNODE"};

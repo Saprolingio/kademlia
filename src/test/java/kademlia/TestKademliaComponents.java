@@ -72,7 +72,7 @@ public class TestKademliaComponents {
                 hash = BitSet.valueOf(longs);
                 contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash, id_bit_length);
                 assertEquals(contact, element.contact);
-                assertFalse(element.get_contacted());
+                assertFalse(element.getContacted());
                 i++;
             }
 
