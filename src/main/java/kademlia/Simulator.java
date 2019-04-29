@@ -47,6 +47,9 @@ public class Simulator {
     @Option(names = { "-l", "--lookups"}, paramLabel = "n_lookups", defaultValue = "0", required = true, description = "The number of random lookups (default: ${DEFAULT-VALUE}).")
     public int lookups = 0;
 
+    @Option(names = { "-a", "--alpha"}, paramLabel = "n_lookups", defaultValue = "3", required = true, description = "The is the number of parallel lookups. It is also the number of elements taken from a routing table during a findNode (default: ${DEFAULT-VALUE}).")
+    public int alpha;
+
     public static void main(String[] args) {
         Simulator simulator = new Simulator();
         CommandLine commandLine = new CommandLine(simulator);
@@ -101,7 +104,7 @@ public class Simulator {
         do {
             c = new Contact(this.k);
         } while(this.all_nodes.containsKey(c.id));
-        Node n = new Node(this.socket, c, this.k);
+        Node n = new Node(this.socket, c, this.k, this.alpha);
         this.all_nodes.put(n.me.id, n);
         this.joined_nodes.add(n);
         return n;
@@ -113,12 +116,12 @@ public class Simulator {
 
     public void start() {
         try {
-            Node bootsrap = this.nodeJoining();
-            Node first = bootsrap;
+            Node bootstrap = this.nodeJoining();
+            Node first = bootstrap;
             Node node;
             for(int n_nodes = this.params.n_nodes - 1; n_nodes > 0; n_nodes--) {
                 node = this.nodeJoining();
-                node.bootstrap(bootsrap.me);
+                node.bootstrap(bootstrap.me);
                 if(this.lookups > 0) {
                     for(int bucket_index = 0; bucket_index < this.k; bucket_index++)
                         for(int n_lookups = this.lookups; n_lookups > 0; n_lookups--) {
@@ -132,7 +135,7 @@ public class Simulator {
                             node.Lookup(id);
                         }
                 }
-                bootsrap = randomBootstrap();
+                bootstrap = randomBootstrap();
             }
             first.toCSV();
 

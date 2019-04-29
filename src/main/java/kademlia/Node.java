@@ -9,20 +9,21 @@ import java.util.List;
 import com.opencsv.CSVWriter;
 
 class Node {
-    public final static int alpha = 1;
 
     // visualizzation addittion
     private static long node_counter = 0;
     public final long node_number; 
     private long received_findnode; 
 
+    public final int alpha;
     private final int k;
     public final Contact me;
     private SocketNode socket;
     private Klist[] routing_table;
     //private Map<BitSet, Object> stored_objects;
 
-    public Node(SocketNode socket, Contact me, int k) {
+    public Node(SocketNode socket, Contact me, int k,  int alpha) {
+        this.alpha = alpha;
         this.k = k;
         this.me = me;
         this.socket = socket;
@@ -41,7 +42,7 @@ class Node {
     public Message receive(Message msg) {
         switch(msg.type) {
             case PING:
-                this.addContact(msg.sender);
+                this.getKbucket(msg.sender).refresh(msg.sender);
                 return new Message.Response(msg);
             case FIND:
                 Message.FindRequest fr = (Message.FindRequest) msg;
@@ -79,23 +80,30 @@ class Node {
         return res.toString();
     }
 
-    private void addContact(Contact contact) {
+    private Klist getKbucket(Contact contact) {
         BitSet app = (BitSet) contact.id.clone();
         app.xor(this.me.id);
         final int pos = app.previousSetBit(app.length()-1);
         if(pos == -1)
-            return;
+            return null;
         Klist klist = this.routing_table[pos];
         if(klist == null) {
             klist = new Klist(this.k);
             this.routing_table[pos] = klist;
         }
+        return klist;
+    }
+
+    private void addContact(Contact contact) {
+        if(contact.id.equals(this.me.id))
+            return;
+        Klist klist = this.getKbucket(contact);
+        if(klist == null)
+            return;
 
         Contact res = klist.addContact(contact);
         if(res != contact) {
-            Message msg = new Message(Message.kind.PING, this.me, res); //ping if alive
-            msg = this.socket.sendAndReceive(msg);
-            if(msg == null) //timed out
+            if(!this.ping(res)) //timed out
                 klist.replace(contact);
             else
                 klist.refresh(res);
@@ -113,23 +121,22 @@ class Node {
             app.xor(id);
             pos = app.previousSetBit(app.length()-1);
         }
-        
-        Klist list = null;
-        for(int i = pos; res.size() < this.k && i < this.routing_table.length; i++) {
-            list = this.routing_table[i];
-            if(list == null)
-                continue;
-            for(Contact c: list)
-                res.add(c);
-        }
-        for(int i = pos - 1; res.size() < this.k && i >= 0; i--) {
-            list = this.routing_table[i];
-            if(list == null)
-                continue;
-            for(Contact c: list)
-                res.add(c);
-        }
 
+        Klist list = null;
+        int i = pos;
+        for(int j = 0; res.size() < this.k && j < this.routing_table.length; j++) {
+            list = this.routing_table[i];
+            i = (i == 0 ? this.routing_table.length : i)-1;
+            if(list == null)
+                continue;
+            int a = 0;
+            for(Contact c: list) {
+                res.add(c);
+                a++;
+                if(a >= alpha)
+                    break;
+            }
+        }
         return res;
     }
 
@@ -138,7 +145,7 @@ class Node {
         short_list.sort();
         ShortList traversed = new ShortList(this.k, this.me);
         traversed.add(this.me);
-        ArrayList<Element> list = short_list.getAlpha(Node.alpha);
+        ArrayList<Element> list = short_list.getAlpha(this.alpha);
         if(list.size() != 0) {
             Contact nearest;
             Contact new_nearest = list.get(0).contact;
@@ -164,17 +171,17 @@ class Node {
                     if(el.get_contacted())
                         traversed.add(el);
                 }
-                list = short_list.getAlpha(Node.alpha);
+                list = short_list.getAlpha(this.alpha);
                 nearest = short_list.get(0).contact;
             } while(nearest.equals(new_nearest) && list.size() != 0);
 
-            for(; list.size() != 0; list = short_list.getAlpha(Node.alpha)) {
+            for(; list.size() != 0; list = short_list.getAlpha(this.alpha)) {
                 for (Element el : list) {
                     Message.FindRequest msg = new Message.FindRequest(id, traversed, this.me, el.contact);
                     Message.FindResponse res = (Message.FindResponse) this.socket.sendAndReceive(msg);
                     if(res != null)
                         el.set_contacted();
-                        this.updateKlist(res.shortlist);       
+                        this.updateKlist(res.shortlist);
                 }
             }
         }

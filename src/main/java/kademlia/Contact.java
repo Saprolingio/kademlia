@@ -30,7 +30,7 @@ class Contact {
 
     //randomly generate contact
     public Contact(int id_bit_length) throws UnknownHostException, UnsupportedEncodingException {
-        this(InetAddress.getByName(ipv6s().get()), ints().range(0, 65535).get(), id_bit_length);
+        this(InetAddress.getByName(ipv6s().get()), ints().range(1024, 65535).get(), id_bit_length);
     }
 
     public Contact(Contact to_clone) {
