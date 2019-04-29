@@ -5,8 +5,7 @@ import java.util.BitSet;
 class Message {
     public enum kind {
         PING,
-        FIND,
-        STORE   //TODO
+        FIND
     };
 
     public final kind type;

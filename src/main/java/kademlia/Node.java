@@ -48,9 +48,6 @@ class Node {
                 this.received_findnode++;
                 this.updateKlist(fr.traversed_nodes);
                 return new Message.FindResponse(this.findNode(fr.id), msg);
-            case STORE:
-                //TODO
-                return null;
             default:
                 return null; //should never appen
         }
@@ -71,7 +68,7 @@ class Node {
                 this.addContact(el.contact);
     }
 
-    
+    @SuppressWarnings("unused") //TODO Debug only
     private static String toByteString(BitSet b) {
         StringBuilder res = new StringBuilder();
         for(int i = b.size(); i > 0; i--)
@@ -183,8 +180,6 @@ class Node {
         }
     }
 
-    public void store() {}   // TODO sss
-
     private static String[] headers = {"SOURCE", "TARGET", "JOIN_NUMBER", "RECEIVED_FINDNODE"};
     public static CSVWriter get_default_CSVWriter(String path) throws IOException
     {
@@ -216,7 +211,7 @@ class Node {
 
     public String toCSV() throws IOException {
         String hexId = this.me.idString() + ".csv";
-        CSVWriter writer = new CSVWriter(new FileWriter(hexId));//,  ',', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+        CSVWriter writer = new CSVWriter(new FileWriter(hexId));
         String id = this.me.idByteString();
         List<String> buf = new ArrayList<String>();
         buf.add(this.me.idString());

@@ -3,6 +3,7 @@ package kademlia;
 import java.util.ArrayDeque;
 
 class Klist extends ArrayDeque<Contact> {
+    private static final long serialVersionUID = 1L;
     private final int k; // maximum number of element in the Klist
 
     public Klist(int k){
