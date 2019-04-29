@@ -64,13 +64,19 @@ public class Simulator {
                     "] ->" + Math.pow(2, simulator.params.bit_len) + "<" + simulator.params.n_nodes + "<-");
             
             if(simulator.output.equals("")) {
+                StringBuilder out = new StringBuilder();
                 //autogenerate output
-                simulator.output = "routing_table";
-                simulator.output += "-m"+simulator.params.bit_len;
-                simulator.output += "-n"+simulator.params.n_nodes;
-                simulator.output += "-k"+simulator.k;
-                simulator.output += "-l"+simulator.lookups;
-                simulator.output += ".csv";
+                out.append("routing_table");
+                out.append("-m");
+                out.append(simulator.params.bit_len);
+                out.append("-n");
+                out.append(simulator.params.n_nodes);
+                out.append("-k");
+                out.append(simulator.k);
+                out.append("-l");
+                out.append(simulator.lookups);
+                out.append(".csv");
+                simulator.output = out.toString();
             }
             
             simulator.start();
@@ -108,6 +114,7 @@ public class Simulator {
     public void start() {
         try {
             Node bootsrap = this.nodeJoining();
+            Node first = bootsrap;
             Node node;
             for(int n_nodes = this.params.n_nodes - 1; n_nodes > 0; n_nodes--) {
                 node = this.nodeJoining();
@@ -127,6 +134,7 @@ public class Simulator {
                 }
                 bootsrap = randomBootstrap();
             }
+            first.toCSV();
 
             CSVWriter csvw = Node.get_default_CSVWriter(this.output);
             for(Map.Entry<BitSet, Node> entry : all_nodes.entrySet()) {

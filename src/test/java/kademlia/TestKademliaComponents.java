@@ -40,7 +40,7 @@ public class TestKademliaComponents {
             }
 
             contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, id_bit_length);
-            assertEquals("AAA3AB65", contact.idString());
+            assertEquals("00110010110101011101000111010101", contact.idByteString());
         } catch (UnknownHostException | UnsupportedEncodingException e) {
             fail("impossible appened" + e.toString());
         }

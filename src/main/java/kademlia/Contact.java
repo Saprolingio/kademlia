@@ -54,7 +54,17 @@ class Contact {
         return res.toString();
     }
 
-    public static BitSet hash(InetAddress ip, Integer port, int id_length) throws UnsupportedEncodingException {
+    public String idByteString() {
+        StringBuilder res = new StringBuilder();
+        for(int i = this.id_bit_length; i > 0; i--)
+            if(this.id.get(i))
+                res.append("1");
+            else
+                res.append("0");
+        return res.toString();
+    }
+
+    public static BitSet hash(InetAddress ip, Integer port, final int id_length) throws UnsupportedEncodingException {
         DigestSHA3 sha;
         int hash_len;
         if(id_length < 224)
@@ -70,19 +80,19 @@ class Contact {
         sha.update(ip.getAddress());
         sha.update(port.byteValue());
         byte b = 0;
-        int wrote = 0;
-        for(int i = 0; i < id_length;) {
-            int min = Math.min(id_length, hash_len);
+        final int remaining_byte = idivCeil(id_length, 8);
+        for(int wrote = 0; wrote < remaining_byte;) {
             byte[] digest = sha.digest();
-            for(int j = 0; j < digest.length && wrote < idivCeil(min, 8); j++) {
-                buff[wrote] = digest[i];
-                i++;
+            for(int j = 0; j < digest.length && wrote < remaining_byte; j++) {
+                buff[wrote] = digest[j];
                 wrote++;
             }
-            id_length -= min;
             sha.update(b++);
         }
-        return BitSet.valueOf(buff);
+        BitSet bitset = BitSet.valueOf(buff);
+        if(bitset.length() > id_length)
+            bitset.clear(id_length, bitset.length());;
+        return bitset;
     }
 
     public long distance(Contact other) {
@@ -101,13 +111,14 @@ class Contact {
     }
 
     public String toString() {
-        String ret = new String("{");
-        ret += this.ip.toString();
-        ret += ", ";
-        ret += String.valueOf(port);
-        ret += ", ";
-        ret += this.idString();
-        ret += "}";
-        return ret;
+        StringBuilder ret = new StringBuilder();
+        ret.append("{");
+        ret.append(this.ip);
+        ret.append(", ");
+        ret.append(port);
+        ret.append(", ");
+        ret.append(this.idString());
+        ret.append("}");
+        return ret.toString();
     }
 };

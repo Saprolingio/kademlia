@@ -25,12 +25,13 @@ class Element {
     }
 
     public String toString() {
-        String str = contact.toString();
-        str += ", ";
+        StringBuilder ret = new StringBuilder();
+        ret.append(contact);
+        ret.append(", ");
         if(!this.contacted)
-            str += "not ";
-        str += "contacted";
-        return str;
+            ret.append("not ");
+        ret.append("contacted");
+        return ret.toString();
     }
 };
 
@@ -46,6 +47,8 @@ class ShortList extends ArrayList<Element>{
     }
 
     public void add(Contact cont) {
+        if(cont.equals(this.owner))
+            return;
         //find for duplicates    
         for(Element el: this) {
             if(el.contact.equals(cont))
