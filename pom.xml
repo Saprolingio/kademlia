@@ -178,15 +178,17 @@
   </build>
 
   <reporting>
-    <plugin>
-      <groupId>com.soebes.maven.plugins</groupId>
-      <artifactId>doxygen-maven-plugin</artifactId>
-      <version>1.1.0</version>
-      <configuration>
-        <haveDot>false</haveDot>
-        <quiet>false</quiet>
-        <projectName>This is a Test Project (basicReportTest)</projectName>
-      </configuration>
-    </plugin> <!-- mvn doxygen:report  // to create doxigen -->
+    <plugins>
+      <plugin>
+        <groupId>com.soebes.maven.plugins</groupId>
+        <artifactId>doxygen-maven-plugin</artifactId>
+        <version>1.1.0</version>
+        <configuration>
+          <haveDot>false</haveDot>
+          <quiet>false</quiet>
+          <projectName>This is a Test Project (basicReportTest)</projectName>
+        </configuration>
+      </plugin> <!-- mvn doxygen:report  // to create doxigen -->
+    </plugins>
   </reporting>
 </project>
