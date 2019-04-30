@@ -25,6 +25,16 @@
 
   <dependencies>
     <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.5</version>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.7.5</version>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
@@ -186,7 +196,7 @@
         <configuration>
           <haveDot>false</haveDot>
           <quiet>false</quiet>
-          <projectName>This is a Test Project (basicReportTest)</projectName>
+          <projectName>Mulas Federico presents Kademlia midterm</projectName>
         </configuration>
       </plugin> <!-- mvn doxygen:report  // to create doxigen -->
     </plugins>

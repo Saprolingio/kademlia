@@ -28,8 +28,9 @@ public class TestKademliaComponents {
             long[] longs1 = { 2 };
             hash = BitSet.valueOf(longs1);
             Contact contact1 = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash, id_bit_length);
-            assertEquals(1, contact.distance(contact1));
-            assertEquals(contact.distance(contact), contact.distance(contact));
+            assertEquals("02", contact1.idString());
+            assertEquals(contact.idByteString()+ "^" + contact1.idByteString(),1, contact.distance(contact1));
+            assertEquals(0, contact.distance(contact));
 
             String[] repr = { "01", "02", "04", "06", "08", "0A", "0C", "0E", "10", "12" };
             for (int i = 1; i < repr.length; i++) {
@@ -40,9 +41,9 @@ public class TestKademliaComponents {
             }
 
             contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, id_bit_length);
-            assertEquals("00110010110101011101000111010101", contact.idByteString());
+            assertEquals("01100101101010111010001110101010", contact.idByteString());
         } catch (UnknownHostException | UnsupportedEncodingException e) {
-            fail("impossible appened" + e.toString());
+            fail("impossible appended" + e.toString());
         }
     }
 

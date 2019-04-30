@@ -170,10 +170,10 @@ class Node {
      */
     private ShortList findNode(BitSet id) {
         ShortList res = new ShortList(this.k, this.me, id);
-        final int pos;
+        int pos;
         if(this.me.id.equals(id)) {
             res.add(this.me); //if you are searching for me, here I am!
-            pos = 0;
+            pos = this.routing_table.length / 2;    //start from half to take closest to me
         } else {
             BitSet app = (BitSet) me.id.clone();
             app.xor(id);
@@ -181,19 +181,16 @@ class Node {
         }
 
         Klist list = null;
-        int i = pos;
         //iterate over klist backward to add element to shortlist until k elment are added
         for(int j = 0; res.size() < this.k && j < this.routing_table.length; j++) {
-            list = this.routing_table[i];
-            i = (i == 0 ? this.routing_table.length : i)-1;
+            list = this.routing_table[pos];
+            pos = (pos == 0 ? this.routing_table.length : pos) - 1;
             if(list == null)
                 continue;
-            int a = 0;
             for(Contact c: list) {
                 res.add(c);
-                a++;
-                if(a >= alpha)
-                    break;
+                if(res.size() == this.k)
+                    return res;
             }
         }
         return res;
@@ -352,7 +349,7 @@ class Node {
      * @throws IOException if the file cannot be opened or created
      */
     public String toCSV() throws IOException {
-        String hexId = this.me.idString() + ".csv";
+        String hexId = this.me.idString() + "_" + this.node_number +".csv";
         CSVWriter writer = new CSVWriter(new FileWriter(hexId));
         String id = this.me.idByteString();
         List<String> buf = new ArrayList<String>();

@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
-
 import com.opencsv.CSVWriter;
 
 import picocli.CommandLine;
@@ -30,8 +29,6 @@ import static net.andreinc.mockneat.unit.networking.IPv6s.ipv6s;
     })
 public class Simulator {
     @Spec public CommandSpec spec;
-    
-
     @ArgGroup(exclusive = false, multiplicity = "1")
     public Real_params params;
 
@@ -87,6 +84,8 @@ public class Simulator {
                 out.append(simulator.k);
                 out.append("-l");
                 out.append(simulator.lookups);
+                out.append("-a");
+                out.append(simulator.alpha);
                 if(simulator.recursive)
                     out.append("-r");
                 out.append(".csv");
@@ -106,26 +105,39 @@ public class Simulator {
     ArrayList<Node> joined_nodes = new ArrayList<Node>();
     SocketNode socket = new SocketNode(all_nodes);
     
+    /**
+     * Generate a random id
+     * @return return a random bitset representing the id
+     * @throws UnknownHostException should never be thrown (caused by random generated ip)
+     * @throws UnsupportedEncodingException should never be thrown (caused by random generated ip)
+     */
     private BitSet randomBitset() throws UnknownHostException, UnsupportedEncodingException {
-        return Contact.hash(InetAddress.getByName(ipv6s().get()), ints().range(0, 65535).get(), this.k);
+        return Contact.hash(InetAddress.getByName(ipv6s().get()), ints().range(0, 65535).get(), this.params.bit_len);
     }
 
+    /**
+     * Generate create a node with random id, and putting it into the joined_node lis
+     * @return the new generate node
+     * @throws UnknownHostException should never be thrown (caused by random generated ip)
+     * @throws UnsupportedEncodingException should never be thrown (caused by hash)
+     */
     private Node nodeJoining() throws UnknownHostException, UnsupportedEncodingException{
         Contact c;
         do {
-            c = new Contact(this.k);
+            c = new Contact(this.params.bit_len);    //generate a random contact not already in use
         } while(this.all_nodes.containsKey(c.id));
-        Node n = new Node(this.socket, c, this.k, this.alpha);
+        Node n = new Node(this.socket, c, this.params.bit_len, this.alpha);
         this.all_nodes.put(n.me.id, n);
         this.joined_nodes.add(n);
         return n;
     }
-
-    private Node randomBootstrap(Node node) {
+    /**
+     * Take a random node from already joined list
+     * @return
+     */
+    private Node randomBootstrap() {
         int rand_pos = ints().range(0, joined_nodes.size()-1).get();
         Node rand_node = this.joined_nodes.get(rand_pos);
-        if(rand_node.me.equals(node.me)) // ensure not same node
-            rand_node = this.joined_nodes.get((rand_pos + 1) % joined_nodes.size());
         return rand_node;
     }
 
@@ -137,9 +149,10 @@ public class Simulator {
         try {
             Node bootstrap = this.nodeJoining();
             Node first = bootstrap;
-            Node node;
+            Node node = bootstrap;
 
             Operation pre_lookup, post_lookup;
+            // setup for recursive/ lookup
             if(this.recursive) {
                 pre_lookup = (n, b, i) -> {
                     ShortList traversed = new ShortList(this.k, b.me, i);
@@ -158,13 +171,13 @@ public class Simulator {
 
             for(int n_nodes = this.params.n_nodes - 1; n_nodes > 0; n_nodes--) {
                 node = this.nodeJoining();
-                bootstrap = randomBootstrap(node);
                 pre_lookup.exec(node, bootstrap, node.me.id);
                 if(this.lookups > 0) {
-                    for(int bucket_index = 0; bucket_index < this.k; bucket_index++)
+                    // generate a random id and fitting it to a bucket list
+                    for(int bucket_index = 0; bucket_index < this.params.bit_len; bucket_index++)
                         for(int n_lookups = this.lookups; n_lookups > 0; n_lookups--) {
                             BitSet id = this.randomBitset();
-                            for(int bit_to_set = bucket_index; bit_to_set < this.k; bit_to_set++) {
+                            for(int bit_to_set = bucket_index; bit_to_set < this.params.bit_len; bit_to_set++) {
                                 if(node.me.id.get(bit_to_set))
                                     id.set(bit_to_set);
                                 else
@@ -173,8 +186,11 @@ public class Simulator {
                             post_lookup.exec(node, bootstrap, id);
                         }
                 }
+                System.out.print("\r" + node.node_number + "/" + this.params.n_nodes);
+                bootstrap = this.randomBootstrap();
             }
             first.toCSV();
+            node.toCSV();
 
             CSVWriter csvw = Node.getDefaultCSVWriter(this.output);
             for(Map.Entry<BitSet, Node> entry : all_nodes.entrySet()) {

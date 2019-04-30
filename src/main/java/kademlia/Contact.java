@@ -88,8 +88,8 @@ class Contact {
         byte[] id_bytes = this.id.toByteArray();
         for(int i = idivCeil(this.id_bit_length, 16) - id_bytes.length * 2; i > 0; i--)
             res.append("0");
-        for (byte b : id_bytes)
-            res.append(String.format("%02X", b));
+        for(int i = id_bytes.length -1 ; i >= 0; i--)
+            res.append(String.format("%02X", id_bytes[i]));
         return res.toString();
     }
 
@@ -99,7 +99,7 @@ class Contact {
      */
     public String idByteString() {
         StringBuilder res = new StringBuilder();
-        for(int i = this.id_bit_length; i > 0; i--)
+        for(int i = this.id_bit_length - 1; i >= 0; i--)
             if(this.id.get(i))
                 res.append("1");
             else
@@ -154,10 +154,10 @@ class Contact {
      * @return return the effective distance between 2 nodes
      */
     public long distance(BitSet id) {
-        BitSet self = (BitSet)this.id.clone();
-        self.xor(id);
+        BitSet aux = (BitSet)this.id.clone();
+        aux.xor(id);
         long d = 0;
-        for (long ndx : self.toLongArray())
+        for (long ndx : aux.toLongArray())
             d += ndx;
 
         return d;
@@ -170,7 +170,7 @@ class Contact {
      * @return return the effective distance between 2 nodes
      */
     public long distance(Contact other) {
-        return distance(this.id);
+        return distance(other.id);
     }
 
     @Override
