@@ -55,7 +55,7 @@ public class TestKademliaComponents {
             long[] longs = {5};
             BitSet hash = BitSet.valueOf(longs);
             Contact owner = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash, id_bit_length);
-            ShortList shortlist = new ShortList(k, owner);
+            ShortList shortlist = new ShortList(k, owner, owner.id);
             final int start = 6;
             Contact contact;
             for(int i = start; i < (k + start + 1); i++) { //add k+1 elements
@@ -81,7 +81,7 @@ public class TestKademliaComponents {
             shortlist.sort();
 
             //test merging with more distant elements
-            ShortList distant = new ShortList(k, owner);
+            ShortList distant = new ShortList(k, owner, owner.id);
             longs[0] = 99999999;
             hash = BitSet.valueOf(longs);
             contact = new Contact(InetAddress.getByName("192.168.0.1"), 123, hash, id_bit_length);

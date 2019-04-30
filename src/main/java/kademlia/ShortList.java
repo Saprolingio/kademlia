@@ -1,29 +1,48 @@
 package kademlia;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 
+/**
+ * Contact wrapper to provide contact check.
+ */
 class Element {
     public final Contact contact;
     private boolean contacted;
+
+    /**
+     * Construct a non contacted element
+     * @param contact the contact to be wrapped
+     */
     public Element(Contact contact) {
         this.contact = contact;
         this.contacted = false;
     }
 
+    /**
+     * get the current status
+     * @return contacted(true)/not contacted(false)
+     */
     public boolean getContacted() {
         return this.contacted;
     }
 
+    /**
+     * the setter for the contact.
+     * It can only set, because a contacted element cannot be "uncontacted".
+     */
     public void setContacted() {
         this.contacted = true;
     }
 
+    @Override
     public boolean equals(Object obj) {
         Element el = (Element) obj;
         // to be equal only the contact is needed to be equal
         return contact.equals(el.contact);
     }
 
+    @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         ret.append(contact);
@@ -35,23 +54,37 @@ class Element {
     }
 };
 
+/**
+ * A extension of an ArrayList, provide merging, checked add and shrinking
+ */
 class ShortList extends ArrayList<Element>{
     private static final long serialVersionUID = 4193002791038011048L;
     private final int k;
-    public final Contact owner;
+    public final Contact owner; //!< the owner used to prevent it's insertion
+    public final BitSet target; //!< the owner, used to sort the Shortlist
 
-    public ShortList(int k, Contact owner){
+    /**
+     * Shortlist shrinkable to k owned by owner
+     * @param k shrinking dimension
+     * @param owner owner of the Shortlist
+     * @param target target of this shortlist
+     */
+    public ShortList(int k, Contact owner, BitSet target){
         this.k = k;
         this.ensureCapacity(k);
         this.owner = owner;
+        this.target = target;
     }
 
+    /**
+     * Add the contact preventing insertion of duplicates or the owner itself
+     * @param cont contact to add
+     */
     public void add(Contact cont) {
-        /*
         if(cont.equals(this.owner))
             return;
-        */
-        //find for duplicates    
+
+        //checking for duplicates
         for(Element el: this) {
             if(el.contact.equals(cont))
                 return;
@@ -59,6 +92,13 @@ class ShortList extends ArrayList<Element>{
         this.add(new Element(cont));
     }
 
+    /**
+     * Add all element of another shortlist.
+     * Using the other public method add, it prevent duplicated and the insertion
+     * of the owner of the list
+     * @param list the list containing the elements to add. Can handle also
+     * null list
+     */
     public void addAll(ShortList list) {
         if(list == null)
             return;
@@ -66,16 +106,25 @@ class ShortList extends ArrayList<Element>{
             this.add(el.contact);
     }
 
+    /**
+     * Sort using the xor distance metric provided by Contact
+     */
     public void sort() {
         this.sort((Element x, Element y) -> {
-            if(x.contact.distance(owner) > y.contact.distance(owner))
+            if(x.contact.distance(target) > y.contact.distance(target))
                 return 1; 
-            if(x.contact.distance(owner) < y.contact.distance(owner))
+            if(x.contact.distance(target) < y.contact.distance(target))
                 return -1;
             return 0; 
         });
     }
 
+    /**
+     * Merge 2 Shortlist.
+     * The merge auto shirk the list to key. the selection fo the "closest"
+     * to owner 
+     * @param list
+     */
     public void merge(ShortList list) {
         if(list == null)
             return;
@@ -84,11 +133,19 @@ class ShortList extends ArrayList<Element>{
         this.shrinkToK();
     }
 
+    /**
+     * Resize te Shortlist to k
+     */
     public void shrinkToK() {
         if(this.k < this.size())
             this.removeRange(this.k, this.size());
     }
 
+    /**
+     * Get the first alpha not contacted Elements
+     * @param alpha how many elements get
+     * @return a list of alpha Elements
+     */
     public ArrayList<Element> getAlpha(int alpha) {
         ArrayList<Element> ret = new ArrayList<Element>(alpha);
         for(Element e: this) {

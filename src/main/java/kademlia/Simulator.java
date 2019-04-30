@@ -129,16 +129,37 @@ public class Simulator {
         return rand_node;
     }
 
+    private static interface Operation {
+        void exec(Node node, Node bootstrap, BitSet id);
+    };
+
     public void start() {
         try {
             Node bootstrap = this.nodeJoining();
             Node first = bootstrap;
             Node node;
+
+            Operation pre_lookup, post_lookup;
+            if(this.recursive) {
+                pre_lookup = (n, b, i) -> {
+                    ShortList traversed = new ShortList(this.k, b.me, i);
+                    traversed.add(n.me);
+                    n.recursiveFindNode(b.me, i, traversed);
+                };
+                post_lookup = pre_lookup;
+            } else {
+                pre_lookup = (n, b, i) -> {
+                    n.bootstrap(b.me);
+                };
+                post_lookup = (n, b, i) -> {
+                    n.Lookup(i);
+                };
+            }
+
             for(int n_nodes = this.params.n_nodes - 1; n_nodes > 0; n_nodes--) {
                 node = this.nodeJoining();
                 bootstrap = randomBootstrap(node);
-                if(!this.recursive)
-                    node.bootstrap(bootstrap.me);
+                pre_lookup.exec(node, bootstrap, node.me.id);
                 if(this.lookups > 0) {
                     for(int bucket_index = 0; bucket_index < this.k; bucket_index++)
                         for(int n_lookups = this.lookups; n_lookups > 0; n_lookups--) {
@@ -149,18 +170,13 @@ public class Simulator {
                                 else
                                     id.clear(bit_to_set);
                             }
-                            if(this.recursive) {
-                                ShortList traversed = new ShortList(this.k, bootstrap.me);
-                                traversed.add(node.me);
-                                node.recursiveFindNode(bootstrap.me, id, traversed);
-                            } else 
-                                node.Lookup(id);
+                            post_lookup.exec(node, bootstrap, id);
                         }
                 }
             }
             first.toCSV();
 
-            CSVWriter csvw = Node.get_default_CSVWriter(this.output);
+            CSVWriter csvw = Node.getDefaultCSVWriter(this.output);
             for(Map.Entry<BitSet, Node> entry : all_nodes.entrySet()) {
                 node = entry.getValue();
                 node.writeToCSV(csvw);
