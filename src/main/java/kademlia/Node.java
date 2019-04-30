@@ -150,20 +150,20 @@ class Node {
         if(klist == null) //should be prevented by previous equals, no bucket for same node
             return;
 
-        Contact res = klist.addContact(contact); //check there is scapegoat
+        Contact res = klist.addContact(contact); //check if there is a scapegoat
         if(res != null) { //gotcha!
             //if added is equal to scapegoat, refresh it, also if not but is reachable
             if(res.equals(contact) || this.ping(res))
                 klist.addContact(res); // refresh this contact
             else
-                klist.addContact(contact);  // old contact timedout, replace it with new contact
+                klist.addContact(contact);  // old contact timed out, replace it with new contact
         } //else is added
     }
 
     /**
      * A primitive operation of kademlia. Query a Node for closest Contact to id.
      * The procedure consist into searching for the best fit klist, take alpha elements from it
-     * and then move to near bucket and take alpha element from tham untile fulling
+     * and then move to near bucket and take alpha element from tham until fulling
      * the list with size k.
      * @param id the searched id
      * @return a list containing at most k elements, taken alpha from each bucket.
