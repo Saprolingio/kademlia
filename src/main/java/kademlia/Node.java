@@ -101,7 +101,7 @@ class Node {
 
     /**
      * Used for debug (not used in the code).
-     * It provide a bitString fo a BitSet
+     * It provide a bitString for a BitSet
      * @param b the bitset to stringify
      * @return the stringified bitset
      */
@@ -361,7 +361,7 @@ class Node {
             if(this.routing_table[i] == null)
                 printN(buf, id.length(), 'N');
             else
-                printN(buf, i + 1, '0', id.substring(0, this.me.id_bit_length - i - 1));
+                printN(buf, i + 1, '*', id.substring(0, this.me.id_bit_length - i - 1));
         }
         write(writer, buf);
 

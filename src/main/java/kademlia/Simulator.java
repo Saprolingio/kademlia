@@ -126,7 +126,7 @@ public class Simulator {
         do {
             c = new Contact(this.params.bit_len);    //generate a random contact not already in use
         } while(this.all_nodes.containsKey(c.id));
-        Node n = new Node(this.socket, c, this.params.bit_len, this.alpha);
+        Node n = new Node(this.socket, c, this.k, this.alpha);
         this.all_nodes.put(n.me.id, n);
         this.joined_nodes.add(n);
         return n;
@@ -186,7 +186,7 @@ public class Simulator {
                             post_lookup.exec(node, bootstrap, id);
                         }
                 }
-                System.out.print("\r" + node.node_number + "/" + this.params.n_nodes);
+                System.out.print("\r node progress: " + node.node_number + "/" + this.params.n_nodes);  // progress status
                 bootstrap = this.randomBootstrap();
             }
             first.toCSV();

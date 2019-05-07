@@ -60,30 +60,24 @@ class Element {
 class ShortList extends ArrayList<Element>{
     private static final long serialVersionUID = 4193002791038011048L;
     private final int k;
-    public final Contact owner; //!< the owner used to prevent it's insertion
     public final BitSet target; //!< the owner, used to sort the Shortlist
 
     /**
      * Shortlist shrinkable to k owned by owner
      * @param k shrinking dimension
-     * @param owner owner of the Shortlist
      * @param target target of this shortlist
      */
     public ShortList(int k, Contact owner, BitSet target){
         this.k = k;
         this.ensureCapacity(k);
-        this.owner = owner;
         this.target = target;
     }
 
     /**
-     * Add the contact preventing insertion of duplicates or the owner itself
+     * Add the contact preventing insertion of duplicates
      * @param cont contact to add
      */
     public void add(Contact cont) {
-        if(cont.equals(this.owner))
-            return;
-
         //checking for duplicates
         for(Element el: this) {
             if(el.contact.equals(cont))
@@ -94,8 +88,7 @@ class ShortList extends ArrayList<Element>{
 
     /**
      * Add all element of another shortlist.
-     * Using the other public method add, it prevent duplicated and the insertion
-     * of the owner of the list
+     * Using the other public method add, it prevent duplicated
      * @param list the list containing the elements to add. Can handle also
      * null list
      */
@@ -122,7 +115,7 @@ class ShortList extends ArrayList<Element>{
     /**
      * Merge 2 Shortlist.
      * The merge auto shirk the list to key. the selection fo the "closest"
-     * to owner 
+     * to target 
      * @param list
      */
     public void merge(ShortList list) {
